@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Jogo da Cobrinha</title>
+    <style>
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Press Start 2P', cursive;
+            color: #0f0;
+        }
+        canvas {
+            background-color: #111;
+            border: 3px solid #0f0;
+        }
+        #scoreboard {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #0f0;
+            font-size: 16px;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="scoreboard">Score: 0 | Best: 0</div>
+<canvas id="game" width="400" height="400"></canvas>
+
+<script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreboard = document.getElementById("scoreboard");
+
+    const box = 20;
+    let snake = [];
+    snake[0] = { x: 9 * box, y: 9 * box };
+
+    let direction = "RIGHT";
+
+    let food = {
+        x: Math.floor(Math.random() * 20) * box,
+        y: Math.floor(Math.random() * 20) * box
+    };
+
+    let score = 0;
+    let bestScore = Number(localStorage.getItem('bestScore')) || 0;
+    updateScoreboard();
+
+    document.addEventListener("keydown", directionChange);
+
+    function directionChange(event) {
+        if (event.key === "ArrowLeft" && direction !== "RIGHT") {
+            direction = "LEFT";
+        } else if (event.key === "ArrowUp" && direction !== "DOWN") {
+            direction = "UP";
+        } else if (event.key === "ArrowRight" && direction !== "LEFT") {
+            direction = "RIGHT";
+        } else if (event.key === "ArrowDown" && direction !== "UP") {
+            direction = "DOWN";
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = "#111";
+        ctx.fillRect(0, 0, 400, 400);
+
+        for (let i = 0; i < snake.length; i++) {
+            ctx.fillStyle = (i === 0) ? "#0f0" : "#0a0";
+            ctx.fillRect(snake[i].x, snake[i].y, box, box);
+            ctx.strokeStyle = "#000";
+            ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+        }
+
+        ctx.fillStyle = "red";
+        ctx.fillRect(food.x, food.y, box, box);
+
+        let snakeX = snake[0].x;
+        let snakeY = snake[0].y;
+
+        if (direction === "LEFT") snakeX -= box;
+        if (direction === "UP") snakeY -= box;
+        if (direction === "RIGHT") snakeX += box;
+        if (direction === "DOWN") snakeY += box;
+
+        if (snakeX === food.x && snakeY === food.y) {
+            score++;
+            food = {
+                x: Math.floor(Math.random() * 20) * box,
+                y: Math.floor(Math.random() * 20) * box
+            };
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('bestScore', bestScore);
+            }
+        } else {
+            snake.pop();
+        }
+
+        const newHead = {
+            x: snakeX,
+            y: snakeY
+        };
+
+        if (
+            snakeX < 0 || snakeX >= 400 ||
+            snakeY < 0 || snakeY >= 400 ||
+            collision(newHead, snake)
+        ) {
+            clearInterval(game);
+            alert("Game Over! Pontuação: " + score);
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('bestScore', bestScore);
+            }
+            updateScoreboard();
+            return;
+        }
+
+        snake.unshift(newHead);
+        updateScoreboard();
+    }
+
+    function collision(head, array) {
+        for (let i = 0; i < array.length; i++) {
+            if (head.x === array[i].x && head.y === array[i].y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function updateScoreboard() {
+        scoreboard.textContent = `Score: ${score} | Best: ${bestScore}`;
+    }
+
+    const game = setInterval(draw, 150);
+</script>
+
+</body>
+</html>
